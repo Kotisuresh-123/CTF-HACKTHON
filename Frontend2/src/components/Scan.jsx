@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./css/Scan.css";
 
 export default function Scan() {
@@ -7,22 +8,44 @@ export default function Scan() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleScan = () => {
-    if (!url.trim()) {
-      alert("Please enter API URL");
-      return;
-    }
 
+
+  const handleScan = async () => {
+  if (!url.trim()) {
+    alert("Please enter API URL");
+    return;
+  }
+
+  try {
     setLoading(true);
 
-    // Simulate scanning process
-    setTimeout(() => {
-      setLoading(false);
+    const response = await axios.post("http://localhost:3000/api/v1/scan", {
+      url: url
+    });
 
-      // Redirect to Home page
+    const result = response.data;
+
+    setLoading(false);
+
+    // ✅ Show meaningful alert
+    if (result.total === 0) {
+      alert("✅ No API keys found. Repository is SAFE.");
+    } else {
+      alert(
+        `⚠️ Scan Completed!\n\n` +
+        `Files Scanned: ${result.scannedFiles}\n` +
+        `Leaks Found: ${result.total}\n\n` +
+        `Check dashboard for risk analysis.`
+      );
       navigate("/home");
-    }, 1500);
-  };
+    }
+
+  } catch (error) {
+    console.error("Scan Error:", error);
+    setLoading(false);
+    alert("❌ Scan failed! Please try again.");
+  }
+};
 
   return (
     <div className="s-app">

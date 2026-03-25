@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./css/Home.css";
 
 function Home() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState({
+    total: 0,
+    low: 0,
+    medium: 0,
+    high: 0,
+  });
+
+  const [leaks, setLeaks] = useState([]);
 
   const goToScan = () => {
     setLoading(true);
@@ -14,6 +23,23 @@ function Home() {
     }, 1200);
   };
 
+  
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const summaryRes = await axios.get("http://localhost:3000/api/v1/summary");
+      const leaksRes = await axios.get("http://localhost:3000/api/v1/leaks");
+
+      setSummary(summaryRes.data);
+      setLeaks(leaksRes.data);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    }
+  };
+
   return (
     <div className="h-container">
 
@@ -21,44 +47,42 @@ function Home() {
         Developer Secret Detection Framework
       </h1>
 
-      {/* Navigate Button */}
       <div className="h-top-btn">
         <button className="h-scan-btn" onClick={goToScan}>
           {loading ? "LOADING..." : "Go to Scan"}
         </button>
       </div>
 
-      {/* Loader */}
+
       {loading && (
         <div className="h-loader-overlay">
           <div className="h-spinner"></div>
         </div>
       )}
 
-      {/* Stats Cards */}
+
       <div className="h-grid-4">
         <div className="h-card">
           <p>Total Scanned</p>
-          <h2>2134</h2>
+          <h2>{summary.total}</h2>
         </div>
 
         <div className="h-card">
           <p>High Risk</p>
-          <h2 className="h-high">12</h2>
+          <h2 className="h-high">{summary.high}</h2>
         </div>
 
         <div className="h-card">
           <p>Medium Risk</p>
-          <h2 className="h-medium">28</h2>
+          <h2 className="h-medium">{summary.medium}</h2>
         </div>
 
         <div className="h-card">
           <p>Low Risk</p>
-          <h2 className="h-low">64</h2>
+          <h2 className="h-low">{summary.low}</h2>
         </div>
       </div>
 
-      {/* Middle Section */}
       <div className="h-grid-2">
 
         <div className="h-card">
@@ -71,14 +95,24 @@ function Home() {
           </div>
         </div>
 
-        <div className="h-card">
-          <h2>Alerts</h2>
-          <p className="h-alert">⚠ High-risk AWS key found</p>
-          <p className="h-alert">⚠ GitHub token exposed</p>
-        </div>
+       <div className="h-card">
+        <h2>Alerts</h2>
+
+        {leaks.length === 0 ? (
+          <p className="h-alert">✅ No threats detected</p>
+        ) : (
+          leaks
+            .filter(item => item.risk === "HIGH")
+            .slice(0, 3) // show top 3 alerts
+            .map((item, index) => (
+              <p key={index} className="h-alert">
+                ⚠ {item.type} key detected in {item.source}
+              </p>
+            ))
+        )}
+      </div>
       </div>
 
-      {/* Table */}
       <div className="h-card h-table-container">
         <h2>Detected Secrets</h2>
 
@@ -95,33 +129,33 @@ function Home() {
           </thead>
 
           <tbody>
-            <tr>
-              <td>GitHub</td>
-              <td>AWS</td>
-              <td>AKIA****</td>
-              <td className="h-high">High</td>
-              <td>33%</td>
-              <td>3:00</td>
-            </tr>
-
-            <tr>
-              <td>Pastebin</td>
-              <td>OpenAI</td>
-              <td>sk-****</td>
-              <td className="h-medium">Medium</td>
-              <td>44%</td>
-              <td>4:00</td>
-            </tr>
-
-            <tr>
-              <td>Logs</td>
-              <td>Stripe</td>
-              <td>pk_****</td>
-              <td className="h-low">Low</td>
-              <td>55%</td>
-              <td>5:00</td>
-            </tr>
+            {leaks.map((item, index) => (
+              <tr key={index}>
+                <td>{item.source}</td>
+                <td>{item.type}</td>
+                <td className="h-key-cell">
+                  <span className="h-key-mask">{item.key}</span>
+                  <span className="h-key-full">{item.originalKey || item.key}</span>
+                </td>
+                <td
+                  className={
+                    item.risk === "HIGH"
+                      ? "h-high"
+                      : item.risk === "MEDIUM"
+                      ? "h-medium"
+                      : "h-low"
+                  }
+                >
+                  {item.risk}
+                </td>
+                <td>{item.riskScore}%</td>
+                <td>
+                  {new Date(item.detectedAt).toLocaleTimeString()}
+                </td>
+              </tr>
+            ))}
           </tbody>
+
         </table>
       </div>
 

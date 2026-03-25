@@ -174,6 +174,7 @@ exports.getLeaksTable = async (req, res) => {
       type: item.type,
       source: item.source,
       key: item.maskedKey,
+        originalKey: item.key,
       risk: item.risk,
       riskScore: item.riskScore,
       detectedAt: item.detectedAt

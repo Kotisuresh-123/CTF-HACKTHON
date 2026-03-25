@@ -212,3 +212,32 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.h-key-cell {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Masked key visible by default */
+.h-key-mask {
+  transition: opacity 0.3s ease;
+}
+
+/* Full key hidden initially */
+.h-key-full {
+  position: absolute;
+  left: 0;
+  top: 40px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+
+/* Hover effect */
+.h-key-cell:hover .h-key-mask {
+  opacity: 0;
+}
+
+.h-key-cell:hover .h-key-full {
+  opacity: 1;
+}
